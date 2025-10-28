@@ -9,6 +9,8 @@ import { OrbitCamera } from "./rendering/core/OrbitCamera.js";
 
 import basicVertex from "./resources/shaders/assignmentVertex.js";
 import basicFragment from "./resources/shaders/assignmentFragment.js";
+import assignmentVertex from "./resources/shaders/assignmentVertex.js";
+import assignmentFragment from "./resources/shaders/assignmentFragment.js";
 
 const { mat4, vec4 } = glMatrix;
 
@@ -24,7 +26,74 @@ function main() {
         return;
     }
 
-    let program = new Shader(gl, basicVertex, basicFragment);
+    // 사각뿔(피라미드) 정점 데이터: [x, y, z, r, g, b, a]
+    // 바닥 정점 4개 + 꼭짓점 1개
+    var rectangleVertices = [ 
+    //    x     y     z     r    g    b    a
+        -0.5,  0.0, -0.5,  1.0, 0.0, 0.0, 1.0, // v0
+         0.5,  0.0, -0.5,  0.0, 1.0, 0.0, 1.0, // v1
+         0.5,  0.0,  0.5,  0.0, 0.0, 1.0, 1.0, // v2
+        -0.5,  0.0,  0.5,  0.8, 0.2, 0.3, 1.0, // v3
+         0.0,  0.75, 0.0,  1.0, 1.0, 0.0, 1.0  // v4 (apex)
+    ];
+
+     // 인덱스: 바닥(두 삼각형) + 옆면(네 삼각형)
+     var rectangleIndices = [
+        // base
+        0, 1, 2,
+        2, 3, 0,
+        // sides
+        0, 1, 4,
+        1, 2, 4,
+        2, 3, 4,
+        3, 0, 4,
+    ];
+
+    let objVA1 = new VertexArray(gl); 
+    let objVB1 = new VertexBuffer(gl,rectangleVertices);
+    // 위치를 vec3로, 색상을 vec4로 전달
+    objVA1.AddBuffer(objVB1, [3, 4], [false, false]); 
+    let objIB1 = new IndexBuffer(gl, rectangleIndices, rectangleIndices.length);
+
+    let objVA2 = new VertexArray(gl); 
+    let objVB2 = new VertexBuffer(gl,rectangleVertices);
+    // 위치를 vec3로, 색상을 vec4로 전달
+    objVA2.AddBuffer(objVB2, [3, 4], [false, false]); 
+    let objIB2 = new IndexBuffer(gl, rectangleIndices, rectangleIndices.length);
+
+    let objVA3 = new VertexArray(gl); 
+    let objVB3 = new VertexBuffer(gl,rectangleVertices);
+    // 위치를 vec3로, 색상을 vec4로 전달
+    objVA3.AddBuffer(objVB3, [3, 4], [false, false]); 
+    let objIB3 = new IndexBuffer(gl, rectangleIndices, rectangleIndices.length);
+
+    let objVA4 = new VertexArray(gl); 
+    let objVB4 = new VertexBuffer(gl,rectangleVertices);
+    // 위치를 vec3로, 색상을 vec4로 전달
+    objVA4.AddBuffer(objVB4, [3, 4], [false, false]); 
+    let objIB4 = new IndexBuffer(gl, rectangleIndices, rectangleIndices.length);
+    
+    //glMatrix의 함수를 사용해 orthographic projection matrix를 생성합니다.
+    let proj = mat4.create();
+    mat4.ortho(proj,-2.0, 2.0, -1.5, 1.5, -1.0, 1.0);
+
+    let shader = new Shader(gl,assignmentVertex,assignmentFragment);
+        
+    objVA1.Unbind(gl); 
+    objVB1.Unbind(gl);
+    objIB1.Unbind(gl);
+
+    objVA2.Unbind(gl); 
+    objVB2.Unbind(gl);
+    objIB2.Unbind(gl);
+
+    objVA3.Unbind(gl); 
+    objVB3.Unbind(gl);
+    objIB3.Unbind(gl);
+
+    objVA4.Unbind(gl); 
+    objVB4.Unbind(gl);
+    objIB4.Unbind(gl);
 
     let renderer = new Renderer(gl);
 
@@ -46,6 +115,25 @@ function main() {
         camera.Update();
     });
 
+    const worldlocalslider = document.getElementById("worldlocalslider");
+    worldlocalslider.addEventListener('input', ()=>{
+        camera.isWorld = worldlocalslider.value;
+    });
+
+    let worldRotation = 0.0;
+    let objectRotation = 0.0;
+
+    const angleslider = document.getElementById("angleslider");
+    angleslider.addEventListener('input', ()=>{
+        if (camera.isWorld < 0.5 || camera.isWorld == null ) {
+            worldRotation = angleslider.value / 180.0 * Math.PI;
+            camera.Update();
+        }else{
+            objectRotation = angleslider.value / 180.0 * Math.PI;
+            camera.Update();
+        }
+    });
+
     let at = [0,0,0];
     let yaw = yawslider.value;
     let pitch = pitchslider.value;
@@ -63,7 +151,43 @@ function main() {
 
     gl.enable(gl.DEPTH_TEST);
 
-    
+    requestAnimationFrame(drawScene);
+
+    function drawScene() {
+        
+        webglUtils.resizeCanvasToDisplaySize(gl.canvas);
+        gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+
+        renderer.Clear();
+
+        shader.Bind();
+
+        {
+            let modelMatrix = mat4.create();
+            mat4.fromYRotation(modelMatrix, worldRotation);
+            mat4.translate(modelMatrix, modelMatrix, [-1.0, -1.0, -2.0]);
+            if (camera.isWorld >= 0.5) {
+                mat4.rotateY(modelMatrix, modelMatrix, objectRotation);
+            }
+            shader.SetUniformMatrix4f("u_model", modelMatrix);
+            shader.SetUniformMatrix4f("u_view", camera.GetViewMatrix());
+            shader.SetUniformMatrix4f("u_projection", projectionMatrix);
+
+            renderer.Draw(objVA1, objIB1, shader);
+
+            renderer.Draw(objVA1, objIB1, shader);
+
+        }
+        
+            
+
+
+        shader.Unbind();
+        
+        requestAnimationFrame(drawScene);
+    }
+
+    drawScene();
 }
 
 main();
