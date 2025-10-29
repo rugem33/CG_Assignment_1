@@ -129,8 +129,8 @@ function main() {
     const perObjectTranslations = [
         [-1.5, -1.0, 0.0],
         [ 1.5, -1.0, 0.0],
-        [-1.5, -1.0, 0.0],
-        [ 1.5, -1.0, 0.0],
+        [-1.5, -0.5, 0.0],
+        [ 1.5, -0.5, 0.0],
     ];
 
     requestAnimationFrame(drawScene);
@@ -146,6 +146,7 @@ function main() {
             for (let i = 0; i < perObjectTranslations.length; i++) {
                 let modelMatrix = mat4.create();
                 mat4.fromYRotation(modelMatrix, worldRotation);
+                if (i >= 2) mat4.rotateX(modelMatrix, modelMatrix, Math.PI);
                 mat4.translate(modelMatrix, modelMatrix, perObjectTranslations[i]);
                 if (camera.isWorld >= 0.5) {
                     mat4.rotateY(modelMatrix, modelMatrix, objectRotation);
@@ -158,10 +159,7 @@ function main() {
 
                 renderer.Draw(objVA1, objIB1, shader);
             }
-        }
-        
-        // Renderer.Draw 내부에서 셰이더를 Unbind하므로 여기서 별도 Unbind는 불필요
-        
+        }        
         requestAnimationFrame(drawScene);
     }
 
