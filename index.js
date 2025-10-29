@@ -26,23 +26,17 @@ function main() {
         return;
     }
 
-    // 사각뿔(피라미드) 정점 데이터: [x, y, z, r, g, b, a]
-    // 바닥 정점 4개 + 꼭짓점 1개
     var rectangleVertices = [ 
-    //    x     y     z     r    g    b    a
-        -0.5,  0.0, -0.5,  1.0, 0.0, 0.0, 1.0, // v0
-         0.5,  0.0, -0.5,  0.0, 1.0, 0.0, 1.0, // v1
-         0.5,  0.0,  0.5,  0.0, 0.0, 1.0, 1.0, // v2
-        -0.5,  0.0,  0.5,  0.8, 0.2, 0.3, 1.0, // v3
-         0.0,  0.75, 0.0,  1.0, 1.0, 0.0, 1.0  // v4 (apex)
+        -0.5,  0.0, -0.5,  1.0, 0.0, 0.0, 1.0,
+         0.5,  0.0, -0.5,  0.0, 1.0, 0.0, 1.0,
+         0.5,  0.0,  0.5,  0.0, 0.0, 1.0, 1.0,
+        -0.5,  0.0,  0.5,  0.8, 0.2, 0.3, 1.0,
+         0.0,  0.75, 0.0,  1.0, 1.0, 0.0, 1.0 
     ];
 
-     // 인덱스: 바닥(두 삼각형) + 옆면(네 삼각형)
      var rectangleIndices = [
-        // base
         0, 1, 2,
         2, 3, 0,
-        // sides
         0, 1, 4,
         1, 2, 4,
         2, 3, 4,
@@ -51,21 +45,14 @@ function main() {
 
     let objVA1 = new VertexArray(gl); 
     let objVB1 = new VertexBuffer(gl,rectangleVertices);
-    // 위치를 vec3로, 색상을 vec4로 전달
     objVA1.AddBuffer(objVB1, [3, 4], [false, false]); 
     let objIB1 = new IndexBuffer(gl, rectangleIndices, rectangleIndices.length);
-    
-    //glMatrix의 함수를 사용해 orthographic projection matrix를 생성합니다.
-    let proj = mat4.create();
-    mat4.ortho(proj,-2.0, 2.0, -1.5, 1.5, -1.0, 1.0);
 
     let shader = new Shader(gl,assignmentVertex,assignmentFragment);
         
     objVA1.Unbind(gl); 
     objVB1.Unbind(gl);
     objIB1.Unbind(gl);
-
-    // 사용하지 않는(정의되지 않은) VAO/VBO/IB Unbind 호출 제거
 
     let renderer = new Renderer(gl);
 
@@ -110,14 +97,10 @@ function main() {
     let yaw = yawslider.value;
     let pitch = pitchslider.value;
     let distance = distanceslider.value;
-    // OrbitCamera 객체 생성
-    // at: 카메라가 바라보는 지점, yaw: y축 기준 회전각, pitch: x축 기준 회전각, distance: at 지점으로부터 카메라까지의 거리, turnspeed: 마우스 드래그 시 회전 속도
     let camera = new OrbitCamera(at, yaw, pitch, distance, 0.01);
 
-    
-
     let projectionMatrix = mat4.create();
-    let fovy = 60.0 * Math.PI / 180.0; // 라디안 단위
+    let fovy = 60.0 * Math.PI / 180.0;
     let aspect = gl.canvas.clientWidth / gl.canvas.clientHeight; 
     let near = 0.1;
     let far = 100.0;
@@ -125,7 +108,6 @@ function main() {
 
     gl.enable(gl.DEPTH_TEST);
 
-    // 여러 개체를 서로 다른 위치에 배치하기 위한 평행이동 벡터들
     const perObjectTranslations = [
         [-1.5, -1.0, 0.0],
         [ 1.5, -1.0, 0.0],
@@ -142,16 +124,12 @@ function main() {
 
         renderer.Clear();
         {
-            // 동일 지오메트리를 여러 번 다른 위치로 렌더링
             for (let i = 0; i < perObjectTranslations.length; i++) {
                 let modelMatrix = mat4.create();
                 mat4.fromYRotation(modelMatrix, worldRotation);
                 if (i >= 2) mat4.rotateX(modelMatrix, modelMatrix, Math.PI);
                 mat4.translate(modelMatrix, modelMatrix, perObjectTranslations[i]);
-                if (camera.isWorld >= 0.5) {
-                    mat4.rotateY(modelMatrix, modelMatrix, objectRotation);
-                }
-                // Renderer.Draw가 셰이더를 Unbind하므로, 매번 Bind 후 유니폼 설정
+                mat4.rotateY(modelMatrix, modelMatrix, objectRotation);
                 shader.Bind();
                 shader.SetUniformMatrix4f("u_model", modelMatrix);
                 shader.SetUniformMatrix4f("u_view", camera.GetViewMatrix());
