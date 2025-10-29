@@ -54,24 +54,6 @@ function main() {
     // 위치를 vec3로, 색상을 vec4로 전달
     objVA1.AddBuffer(objVB1, [3, 4], [false, false]); 
     let objIB1 = new IndexBuffer(gl, rectangleIndices, rectangleIndices.length);
-
-    let objVA2 = new VertexArray(gl); 
-    let objVB2 = new VertexBuffer(gl,rectangleVertices);
-    // 위치를 vec3로, 색상을 vec4로 전달
-    objVA2.AddBuffer(objVB2, [3, 4], [false, false]); 
-    let objIB2 = new IndexBuffer(gl, rectangleIndices, rectangleIndices.length);
-
-    let objVA3 = new VertexArray(gl); 
-    let objVB3 = new VertexBuffer(gl,rectangleVertices);
-    // 위치를 vec3로, 색상을 vec4로 전달
-    objVA3.AddBuffer(objVB3, [3, 4], [false, false]); 
-    let objIB3 = new IndexBuffer(gl, rectangleIndices, rectangleIndices.length);
-
-    let objVA4 = new VertexArray(gl); 
-    let objVB4 = new VertexBuffer(gl,rectangleVertices);
-    // 위치를 vec3로, 색상을 vec4로 전달
-    objVA4.AddBuffer(objVB4, [3, 4], [false, false]); 
-    let objIB4 = new IndexBuffer(gl, rectangleIndices, rectangleIndices.length);
     
     //glMatrix의 함수를 사용해 orthographic projection matrix를 생성합니다.
     let proj = mat4.create();
@@ -83,17 +65,7 @@ function main() {
     objVB1.Unbind(gl);
     objIB1.Unbind(gl);
 
-    objVA2.Unbind(gl); 
-    objVB2.Unbind(gl);
-    objIB2.Unbind(gl);
-
-    objVA3.Unbind(gl); 
-    objVB3.Unbind(gl);
-    objIB3.Unbind(gl);
-
-    objVA4.Unbind(gl); 
-    objVB4.Unbind(gl);
-    objIB4.Unbind(gl);
+    // 사용하지 않는(정의되지 않은) VAO/VBO/IB Unbind 호출 제거
 
     let renderer = new Renderer(gl);
 
@@ -142,6 +114,8 @@ function main() {
     // at: 카메라가 바라보는 지점, yaw: y축 기준 회전각, pitch: x축 기준 회전각, distance: at 지점으로부터 카메라까지의 거리, turnspeed: 마우스 드래그 시 회전 속도
     let camera = new OrbitCamera(at, yaw, pitch, distance, 0.01);
 
+    
+
     let projectionMatrix = mat4.create();
     let fovy = 60.0 * Math.PI / 180.0; // 라디안 단위
     let aspect = gl.canvas.clientWidth / gl.canvas.clientHeight; 
@@ -167,7 +141,6 @@ function main() {
         gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 
         renderer.Clear();
-
         {
             // 동일 지오메트리를 여러 번 다른 위치로 렌더링
             for (let i = 0; i < perObjectTranslations.length; i++) {
@@ -192,7 +165,6 @@ function main() {
         requestAnimationFrame(drawScene);
     }
 
-    shader.Unbind();
     drawScene();
 }
 
