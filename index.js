@@ -55,24 +55,6 @@ function main() {
     objVA1.AddBuffer(objVB1, [3, 4], [false, false]); 
     let objIB1 = new IndexBuffer(gl, rectangleIndices, rectangleIndices.length);
 
-    let objVA2 = new VertexArray(gl); 
-    let objVB2 = new VertexBuffer(gl,rectangleVertices);
-    // 위치를 vec3로, 색상을 vec4로 전달
-    objVA2.AddBuffer(objVB2, [3, 4], [false, false]); 
-    let objIB2 = new IndexBuffer(gl, rectangleIndices, rectangleIndices.length);
-
-    let objVA3 = new VertexArray(gl); 
-    let objVB3 = new VertexBuffer(gl,rectangleVertices);
-    // 위치를 vec3로, 색상을 vec4로 전달
-    objVA3.AddBuffer(objVB3, [3, 4], [false, false]); 
-    let objIB3 = new IndexBuffer(gl, rectangleIndices, rectangleIndices.length);
-
-    let objVA4 = new VertexArray(gl); 
-    let objVB4 = new VertexBuffer(gl,rectangleVertices);
-    // 위치를 vec3로, 색상을 vec4로 전달
-    objVA4.AddBuffer(objVB4, [3, 4], [false, false]); 
-    let objIB4 = new IndexBuffer(gl, rectangleIndices, rectangleIndices.length);
-    
     //glMatrix의 함수를 사용해 orthographic projection matrix를 생성합니다.
     let proj = mat4.create();
     mat4.ortho(proj,-2.0, 2.0, -1.5, 1.5, -1.0, 1.0);
@@ -82,18 +64,6 @@ function main() {
     objVA1.Unbind(gl); 
     objVB1.Unbind(gl);
     objIB1.Unbind(gl);
-
-    objVA2.Unbind(gl); 
-    objVB2.Unbind(gl);
-    objIB2.Unbind(gl);
-
-    objVA3.Unbind(gl); 
-    objVB3.Unbind(gl);
-    objIB3.Unbind(gl);
-
-    objVA4.Unbind(gl); 
-    objVB4.Unbind(gl);
-    objIB4.Unbind(gl);
 
     let renderer = new Renderer(gl);
 
@@ -151,43 +121,51 @@ function main() {
 
     gl.enable(gl.DEPTH_TEST);
 
+    // v4(꼭짓점) 기준 점대칭 변환: T(v4) * S(-1,-1,-1) * T(-v4)
+    const apex = [0.0, 0.75, 0.0];
+    const mirrorAroundApex = mat4.create();
+    mat4.translate(mirrorAroundApex, mirrorAroundApex, apex);
+    mat4.scale(mirrorAroundApex, mirrorAroundApex, [-1.0, -1.0, -1.0]);
+    mat4.translate(mirrorAroundApex, mirrorAroundApex, [-apex[0], -apex[1], -apex[2]]);
+
+    // 4개의 사각뿔 배치: 각 쌍을 겹치게 배치하고, 두 번째(1,3)만 점대칭 적용
+    const perObjectTranslations = [
+        [-1.0, -1.0, -2.0], // 0번
+        [-1.0, -1.0, -2.0], // 1번 (0과 겹침, 점대칭 대상)
+        [ 1.0, -1.0, -2.0], // 2번
+        [ 1.0, -1.0, -2.0], // 3번 (2와 겹침, 점대칭 대상)
+    ];
+    const mirroredInstanceIds = new Set([1, 3]);
+
     requestAnimationFrame(drawScene);
 
     function drawScene() {
-        
         webglUtils.resizeCanvasToDisplaySize(gl.canvas);
         gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 
         renderer.Clear();
 
-        shader.Bind();
-
-        {
+        for (let i = 0; i < perObjectTranslations.length; i++) {
             let modelMatrix = mat4.create();
-            mat4.fromYRotation(modelMatrix, worldRotation);
-            mat4.translate(modelMatrix, modelMatrix, [-1.0, -1.0, -2.0]);
-            if (camera.isWorld >= 0.5) {
-                mat4.rotateY(modelMatrix, modelMatrix, objectRotation);
+            mat4.fromYRotation(modelMatrix, worldRotation); // 월드 회전
+            mat4.translate(modelMatrix, modelMatrix, perObjectTranslations[i]); // 위치 이동
+            if (mirroredInstanceIds.has(i)) {
+                mat4.multiply(modelMatrix, modelMatrix, mirrorAroundApex); // 로컬 축 점대칭
             }
+            if (camera.isWorld >= 0.5) {
+                mat4.rotateY(modelMatrix, modelMatrix, objectRotation); // 로컬 회전
+            }
+
+            shader.Bind();
             shader.SetUniformMatrix4f("u_model", modelMatrix);
             shader.SetUniformMatrix4f("u_view", camera.GetViewMatrix());
             shader.SetUniformMatrix4f("u_projection", projectionMatrix);
 
             renderer.Draw(objVA1, objIB1, shader);
-
-            renderer.Draw(objVA1, objIB1, shader);
-
         }
-        
-            
 
-
-        shader.Unbind();
-        
         requestAnimationFrame(drawScene);
     }
-
-    drawScene();
 }
 
 main();
