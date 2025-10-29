@@ -192,7 +192,7 @@ function main() {
         requestAnimationFrame(drawScene);
     }
 
-
+    shader.Unbind();
     drawScene();
 }
 
