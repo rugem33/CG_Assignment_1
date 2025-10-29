@@ -151,6 +151,14 @@ function main() {
 
     gl.enable(gl.DEPTH_TEST);
 
+    // 여러 개체를 서로 다른 위치에 배치하기 위한 평행이동 벡터들
+    const perObjectTranslations = [
+        [-1.5, -1.0, 0.0],
+        [ 1.5, -1.0, 0.0],
+        [-1.5, -1.0, 0.0],
+        [ 1.5, -1.0, 0.0],
+    ];
+
     requestAnimationFrame(drawScene);
 
     function drawScene() {
@@ -160,32 +168,30 @@ function main() {
 
         renderer.Clear();
 
-        shader.Bind();
-
         {
-            let modelMatrix = mat4.create();
-            mat4.fromYRotation(modelMatrix, worldRotation);
-            mat4.translate(modelMatrix, modelMatrix, [-1.0, -1.0, -2.0]);
-            if (camera.isWorld >= 0.5) {
-                mat4.rotateY(modelMatrix, modelMatrix, objectRotation);
+            // 동일 지오메트리를 여러 번 다른 위치로 렌더링
+            for (let i = 0; i < perObjectTranslations.length; i++) {
+                let modelMatrix = mat4.create();
+                mat4.fromYRotation(modelMatrix, worldRotation);
+                mat4.translate(modelMatrix, modelMatrix, perObjectTranslations[i]);
+                if (camera.isWorld >= 0.5) {
+                    mat4.rotateY(modelMatrix, modelMatrix, objectRotation);
+                }
+                // Renderer.Draw가 셰이더를 Unbind하므로, 매번 Bind 후 유니폼 설정
+                shader.Bind();
+                shader.SetUniformMatrix4f("u_model", modelMatrix);
+                shader.SetUniformMatrix4f("u_view", camera.GetViewMatrix());
+                shader.SetUniformMatrix4f("u_projection", projectionMatrix);
+
+                renderer.Draw(objVA1, objIB1, shader);
             }
-            shader.SetUniformMatrix4f("u_model", modelMatrix);
-            shader.SetUniformMatrix4f("u_view", camera.GetViewMatrix());
-            shader.SetUniformMatrix4f("u_projection", projectionMatrix);
-
-            renderer.Draw(objVA1, objIB1, shader);
-
-            renderer.Draw(objVA1, objIB1, shader);
-
         }
         
-            
-
-
-        shader.Unbind();
+        // Renderer.Draw 내부에서 셰이더를 Unbind하므로 여기서 별도 Unbind는 불필요
         
         requestAnimationFrame(drawScene);
     }
+
 
     drawScene();
 }
