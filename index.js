@@ -9,8 +9,6 @@ import { OrbitCamera } from "./rendering/core/OrbitCamera.js";
 
 import basicVertex from "./resources/shaders/assignmentVertex.js";
 import basicFragment from "./resources/shaders/assignmentFragment.js";
-import assignmentVertex from "./resources/shaders/assignmentVertex.js";
-import assignmentFragment from "./resources/shaders/assignmentFragment.js";
 
 const { mat4, vec4 } = glMatrix;
 
@@ -48,7 +46,7 @@ function main() {
     objVA1.AddBuffer(objVB1, [3, 4], [false, false]); 
     let objIB1 = new IndexBuffer(gl, rectangleIndices, rectangleIndices.length);
 
-    let shader = new Shader(gl,assignmentVertex,assignmentFragment);
+    let shader = new Shader(gl,basicVertex,basicFragment);
         
     objVA1.Unbind(gl); 
     objVB1.Unbind(gl);
@@ -108,7 +106,7 @@ function main() {
 
     gl.enable(gl.DEPTH_TEST);
 
-    const perObjectTranslations = [
+    const objTransCoord = [
         [-1.5, -1.0, 0.0],
         [ 1.5, -1.0, 0.0],
         [-1.5, -0.5, 0.0],
@@ -124,11 +122,11 @@ function main() {
 
         renderer.Clear();
         {
-            for (let i = 0; i < perObjectTranslations.length; i++) {
+            for (let i = 0; i < objTransCoord.length; i++) {
                 let modelMatrix = mat4.create();
                 mat4.fromYRotation(modelMatrix, worldRotation);
                 if (i >= 2) mat4.rotateX(modelMatrix, modelMatrix, Math.PI);
-                mat4.translate(modelMatrix, modelMatrix, perObjectTranslations[i]);
+                mat4.translate(modelMatrix, modelMatrix, objTransCoord[i]);
                 mat4.rotateY(modelMatrix, modelMatrix, objectRotation);
                 shader.Bind();
                 shader.SetUniformMatrix4f("u_model", modelMatrix);
